@@ -35,12 +35,23 @@
           </div>
         </form>
       </div>
+
+      <div v-for="blog in blogs" :key="blog.id" class="my-10 p-6 bg-white border border-gray-200 rounded-lg mb-4">
+        <h2 class="text-xl font-bold mb-2 capitalize">{{ blog.title }}</h2>
+        <p class="text-gray-700">{{ blog.body.slice(0, 40) }}{{ blog.body.length >40 ? '...': '' }}</p>
+        <p class="mt-2 text-gray-600">Created by <span class="text-purple-700 text-md font-semibold">{{ blog.created_by }}</span></p>
+      </div>
+    </div>
+    <div>
+
+
     </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+import axios from 'axios';
+
 
 export default {
   data() {
@@ -53,10 +64,13 @@ export default {
       },
       errors: [],
       categories: [],
-      selectedCategories: []
+      selectedCategories: [],
+      blogs: []
+
     }
   },
   mounted() {
+    this.fetchBlogs()
     this.fetchCategories()
     this.setCreatedBy()
   },
@@ -64,14 +78,26 @@ export default {
     async fetchCategories() {
       try {
         const response = await axios.get('/art/blogs/categories/')
-        this.categories = response.data
+        this.categories = response.data || []
       } catch (error) {
+        this.categories = []
         console.error('Error fetching categories:', error)
       }
     },
     setCreatedBy() {
       // Get user ID from local storage and assign it to created_by field
       this.form.created_by = localStorage.getItem('user.id');
+    },
+    
+    async fetchBlogs() {
+      try {
+        const response = await axios.get('/art/blogs/')
+        this.blogs = response.data.results || []
+        console.log(this.blogs, 'haya ndiyo mambo')
+      } catch (error) {
+        this.blogs = []
+        console.error('Error fetching blogs:', error)
+      }
     },
     async submitForm() {
 
@@ -92,9 +118,6 @@ export default {
 
       if (this.errors.length === 0) {
         try {
-          console.log(this.form.categories, 'hii ni ya wale wasee')
-          console.log(this.form, 'hii ni ya wale wasee wa backend')
-
           const response = await axios.post('/art/blogs/create/', this.form)
           console.log('Blog created:', response.data)
         } catch (error) {
