@@ -37,9 +37,16 @@
       </div>
 
       <div v-for="blog in blogs" :key="blog.id" class="my-10 p-6 bg-white border border-gray-200 rounded-lg mb-4">
-        <h2 class="text-xl font-bold mb-2 capitalize">{{ blog.title }}</h2>
-        <p class="text-gray-700">{{ blog.body.slice(0, 40) }}{{ blog.body.length >40 ? '...': '' }}</p>
-        <p class="mt-2 text-gray-600">Created by <span class="text-purple-700 text-md font-semibold">{{ blog.created_by }}</span></p>
+        <router-link :to="{ name: 'blogdetail', params: { id: blog.id } }">
+          <div className="w-full h-full">
+            <h2 class="text-xl font-bold mb-2 capitalize">{{ blog.title }}</h2>
+            <p class="text-gray-700">{{ blog.body.slice(0, 40) }}{{ blog.body.length >40 ? '...': '' }}</p>
+            <p class="mt-2 text-gray-600">Created by <span class="text-purple-700 text-md font-semibold">{{ blog.created_by }}</span></p>
+            <div  class="my-4 flex-row w-full h-full">
+              <span v-for="(cat, index) in blog.categories" :key="index" class="mx-1 bg-purple-700 px-4 rounded-full py-2 text-gray-300">{{cat.name}}</span>
+            </div>
+          </div>
+        </router-link>
       </div>
     </div>
     <div>
@@ -119,6 +126,7 @@ export default {
       if (this.errors.length === 0) {
         try {
           const response = await axios.post('/art/blogs/create/', this.form)
+          this.blogs.unshift(response.data)
           console.log('Blog created:', response.data)
         } catch (error) {
           console.error('Error creating blog:', error)
