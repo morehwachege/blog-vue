@@ -19,8 +19,10 @@
 
           <div>
             <label>Category</label><br>
-            <select v-model="selectedCategories" multiple class="w-full mt-2 py-4 px-6 border border-gray-200 rounded-lg">
-              <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+            <select v-model="selectedCategories" multiple
+              class="w-full mt-2 py-4 px-6 border border-gray-200 rounded-lg">
+              <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}
+              </option>
             </select>
           </div>
 
@@ -40,14 +42,36 @@
         <router-link :to="{ name: 'blogdetail', params: { id: blog.id } }">
           <div className="w-full h-full">
             <h2 class="text-xl font-bold mb-2 capitalize">{{ blog.title }}</h2>
-            <p class="text-gray-700">{{ blog.body.slice(0, 40) }}{{ blog.body.length >40 ? '...': '' }}</p>
-            <p class="mt-2 text-gray-600">Created by <span class="text-purple-700 text-md font-semibold">{{ blog.created_by }}</span></p>
-            <div  class="my-4 flex-row w-full h-full">
-              <span v-for="(cat, index) in blog.categories" :key="index" class="mx-1 bg-purple-700 px-4 rounded-full py-2 text-gray-300">{{cat.name}}</span>
+            <p class="text-gray-700">{{ blog.body.slice(0, 40) }}{{ blog.body.length > 40 ? '...' : '' }}</p>
+            <p class="mt-2 text-gray-600">Created by <span class="text-purple-700 text-md font-semibold">{{
+          blog.created_by
+        }}</span> on {{ formatDate(blog.created_at) }}</p>
+            <div class="my-4 flex-row w-full h-full">
+              <span v-for="(cat, index) in blog.categories" :key="index"
+                class="mx-1 bg-purple-700 px-4 rounded-full py-2 text-gray-300">{{ cat.name }}</span>
             </div>
           </div>
         </router-link>
       </div>
+
+      <div class="flex justify-center mt-8">
+        <nav class="flex" aria-label="Pagination">
+          <ul class="flex space-x-2">
+            <li>
+              <button
+                v-for="pageNumber in totalPages"
+                :key="pageNumber"
+                :class="{ 'bg-purple-500 text-gray-50': currentPage === pageNumber, 'bg-gray-300 text-gray-200 hover:bg-purple-700': currentPage !== pageNumber }"
+                class="mx-1 px-4 py-2 rounded-lg focus:outline-none focus:ring focus:ring-purple-300"
+                @click="changePage(pageNumber)"
+              >
+                {{ pageNumber }}
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
     </div>
     <div>
 
@@ -58,7 +82,6 @@
 
 <script>
 import axios from 'axios';
-
 
 export default {
   data() {
@@ -72,67 +95,85 @@ export default {
       errors: [],
       categories: [],
       selectedCategories: [],
-      blogs: []
-
-    }
+      blogs: [],
+      currentPage: 1,
+      totalPages: 10
+    };
   },
   mounted() {
-    this.fetchBlogs()
-    this.fetchCategories()
-    this.setCreatedBy()
+    this.fetchBlogs();
+    this.fetchCategories();
+    this.setCreatedBy();
   },
   methods: {
     async fetchCategories() {
       try {
-        const response = await axios.get('/art/blogs/categories/')
-        this.categories = response.data || []
+        const response = await axios.get('/art/blogs/categories/');
+        this.categories = response.data || [];
       } catch (error) {
-        this.categories = []
-        console.error('Error fetching categories:', error)
+        this.categories = [];
+        console.error('Error fetching categories:', error);
       }
+    },
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      const options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        timeZoneName: 'short'
+      };
+
+      return date.toLocaleString('en-US', options);
     },
     setCreatedBy() {
       // Get user ID from local storage and assign it to created_by field
       this.form.created_by = localStorage.getItem('user.id');
     },
-    
+
     async fetchBlogs() {
       try {
-        const response = await axios.get('/art/blogs/')
-        this.blogs = response.data.results || []
-        console.log(this.blogs, 'haya ndiyo mambo')
+        const response = await axios.get(`/art/blogs/?page=${this.currentPage}`);
+        this.blogs = response.data.results || [];
+        console.log(this.blogs, 'haya ndiyo mambo');
       } catch (error) {
-        this.blogs = []
-        console.error('Error fetching blogs:', error)
+        this.blogs = [];
+        console.error('Error fetching blogs:', error);
       }
     },
     async submitForm() {
-
-      this.errors = []
+      this.errors = [];
       if (!this.form.title) {
-        this.errors.push('Title is required')
+        this.errors.push('Title is required');
       }
 
       if (!this.form.body) {
-        this.errors.push('Body is required')
+        this.errors.push('Body is required');
       }
 
       if (this.selectedCategories.length === 0) {
-        this.errors.push('Category is required')
+        this.errors.push('Category is required');
       } else {
-        this.form.category = this.selectedCategories.map(Number); 
+        this.form.category = this.selectedCategories.map(Number);
       }
 
       if (this.errors.length === 0) {
         try {
-          const response = await axios.post('/art/blogs/create/', this.form)
-          this.blogs.unshift(response.data)
-          console.log('Blog created:', response.data)
+          const response = await axios.post('/art/blogs/create/', this.form);
+          this.blogs.unshift(response.data);
+          console.log('Blog created:', response.data);
         } catch (error) {
-          console.error('Error creating blog:', error)
+          console.error('Error creating blog:', error);
         }
       }
+    },
+    changePage(pageNumber) {
+      this.currentPage = pageNumber;
+      this.fetchBlogs()
     }
   }
-}
+};
 </script>
